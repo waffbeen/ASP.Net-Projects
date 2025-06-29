@@ -1,0 +1,14 @@
+﻿.vs/
+bin/
+obj/
+*.user
+*.suo
+*.log
+*.tmp
+*.bak
+*.cache
+*.db
+*.sqlite
+*.pdb
+App_Data/
+Logs/

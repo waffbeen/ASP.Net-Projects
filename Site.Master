@@ -1,0 +1,114 @@
+﻿<%@ Master Language="VB" AutoEventWireup="false" CodeBehind="Site.master.vb" Inherits="Vision.SiteMaster" %>
+
+<!DOCTYPE html>
+<html lang="en">
+<head runat="server">
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title><%: Page.Title %> - Smart Reporting Platform</title>
+    
+    <%-- DevExtreme CSS (should be included by all pages) --%>
+    <link rel="stylesheet" href="https://cdn3.devexpress.com/jslib/23.2.3/css/dx.common.css" />
+    <link rel="stylesheet" href="https://cdn3.devexpress.com/jslib/23.2.3/css/dx.light.css" />
+
+    <%-- Basic Layout CSS for the master page elements --%>
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 0; padding: 0; display: flex; flex-direction: column; min-height: 100vh; }
+        .navbar { background-color: #343a40; color: white; padding: 10px 20px; display: flex; justify-content: space-between; align-items: center; }
+        .navbar a { color: white; text-decoration: none; margin-left: 20px; font-weight: bold; }
+        .navbar a:hover { text-decoration: underline; }
+        .navbar .user-info { font-size: 0.9em; margin-right: 10px; }
+        .main-content { flex-grow: 1; padding: 0; margin: 0; } /* Main content area will fill remaining space */
+        .footer { background-color: #f8f9fa; padding: 15px 20px; text-align: center; font-size: 0.8em; border-top: 1px solid #e0e0e0; }
+    </style>
+    
+    <asp:ContentPlaceHolder ID="head" runat="server">
+    </asp:ContentPlaceHolder>
+</head>
+<body>
+    <form runat="server">
+        <div class="navbar">
+            <div>
+                <a href="Viewer.aspx">Viewer Panel</a>
+                <asp:Panel ID="CreatorPanelLink" runat="server" Visible="false">
+                    <a href="Creator.aspx">Creator Panel</a>
+                    <a href="ManageSQLViews.aspx">Manage SQL Views</a>
+                </asp:Panel>
+            </div>
+            <div class="user-info">
+                Welcome, <asp:Literal ID="UsernameLiteral" runat="server" /> (<asp:Literal ID="RoleLiteral" runat="server" />)
+                <asp:LinkButton ID="LogoutButton" runat="server" OnClientClick="return doLogout();" Text="Logout" CssClass="logout-link"></asp:LinkButton>
+            </div>
+        </div>
+
+        <div class="main-content">
+            <asp:ContentPlaceHolder ID="MainContent" runat="server">
+            </asp:ContentPlaceHolder>
+        </div>
+
+        <div class="footer">
+            © <%: DateTime.Now.Year %> - Smart SQL Dynamic Reporting Platform
+        </div>
+    </form>
+
+    <%-- IMPORTANT: ALL JavaScript Libraries are loaded ONLY ONCE in the Master Page, at the END of the BODY --%>
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+    <script src="https://cdn3.devexpress.com/jslib/23.2.3/js/dx.all.js"></script>
+    
+    <%-- Monaco Editor Loader (Must be loaded before require.config) --%>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.34.0/min/vs/loader.min.js"></script>
+    
+    <%-- PDF and Excel Export Libraries (order matters for UMD bundles and dependencies) --%>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/exceljs/4.4.0/exceljs.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
+    
+    <script type="text/javascript">
+        // DevExtreme requires these global aliases to find the libraries
+        // These aliases MUST be set AFTER the respective library JS files are loaded.
+        if (typeof ExcelJS !== 'undefined') {
+            window.ExcelJS = ExcelJS;
+        } else {
+            console.warn("ExcelJS library not found.");
+        }
+
+        if (typeof jspdf !== 'undefined' && typeof jspdf.jsPDF !== 'undefined') {
+            window.jsPDF = jspdf.jsPDF; // Correctly aliasing the constructor from UMD bundle
+        } else if (typeof window.jsPDF === 'undefined') {
+            console.warn("jsPDF library not found or not aliased correctly.");
+        }
+
+        // Monaco Editor configuration (call require.config only once)
+        if (typeof require !== 'undefined' && typeof monaco === 'undefined') { // Only configure if Monaco loader is present and Monaco isn't yet created
+            require.config({ paths: { 'vs': 'https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.34.0/min/vs' } });
+            // The actual monaco.editor.create will happen in the content pages (Creator/ManageSQLViews)
+        } else if (typeof require === 'undefined') {
+            console.warn("Monaco loader (require.js) not found. Monaco editor will not initialize.");
+        }
+    </script>
+
+    <script type="text/javascript">
+        // Global logout function accessible from all content pages
+        function doLogout() {
+            $.ajax({
+                type: "POST",
+                url: "Login.aspx/Logout",
+                contentType: "application/json; charset=utf-8",
+                dataType: "json",
+                success: function (response) {
+                    if (response.d.Success) {
+                        window.location.href = "Login.aspx"; // Redirect to login after successful logout
+                    } else {
+                        alert("Logout failed: " + response.d.ErrorMessage);
+                    }
+                },
+                error: function () {
+                    alert("AJAX error during logout.");
+                }
+            });
+            return false; // Prevent default postback
+        }
+    </script>
+</body>
+</html>
